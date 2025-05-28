@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kaniko-build
+spec:
+  restartPolicy: Never
+  containers:
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:latest
+    args:
+      - "--dockerfile=Dockerfile"
+      - "--context=/workspace"
+      - "--destination=docker.io/khimnguynn/CandleChartAPI:v1.0.0"
+    volumeMounts:
+      - name: kaniko-secret
+        mountPath: /kaniko/.docker
+      - name: workspace
+        mountPath: /workspace
+  initContainers:
+  - name: git-clone
+    image: alpine/git
+    args:
+      - clone
+      - --single-branch
+      - --branch=main
+      - https://github.com/khimnguynnn/CandleChartAPI.git
+      - /workspace
+    volumeMounts:
+      - name: workspace
+        mountPath: /workspace
+  volumes:
+    - name: kaniko-secret
+      secret:
+        secretName: regcred
+        items:
+          - key: .dockerconfigjson
+            path: config.json
+    - name: workspace
+      emptyDir: {}
